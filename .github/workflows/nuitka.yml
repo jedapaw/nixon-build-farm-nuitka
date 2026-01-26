@@ -1,8 +1,6 @@
 name: Nixon Nuitka Build
-
 on:
   workflow_dispatch:
-
 jobs:
   build-farm:
     strategy:
@@ -13,78 +11,57 @@ jobs:
             suffix: .exe
             output_name: payload.exe
             final_name: payload.windows.exe
-
           - os: ubuntu-22.04
             suffix: .bin
             output_name: payload.bin
             final_name: payload.linux.bin
-
           - os: macos-latest
             suffix: .bin
             output_name: payload.bin
             final_name: payload.macos.bin
-
           - os: ubuntu-22.04
             suffix: .bin
             final_name: payload.android.bin
-
     runs-on: ${{ matrix.os }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
+        with:
+          ref: main
+          fetch-depth: 0
       - name: Setup Python
         if: matrix.final_name != 'payload.android.bin'
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
       - name: Install Nuitka
         if: matrix.final_name != 'payload.android.bin'
-        run: |
-          pip install nuitka zstandard ordered-set
-
+        run: pip install nuitka zstandard ordered-set
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          python -m nuitka --standalone --onefile --remove-output \
-            --assume-yes-for-downloads \
-            --output-filename=${{ matrix.output_name }} payload.py
+          python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=${{ matrix.output_name }} {payload_filename}
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
-
       - name: Build Linux/macOS
         if: matrix.os != 'windows-latest' && matrix.final_name != 'payload.android.bin'
         run: |
-          python -m nuitka --standalone --onefile --remove-output \
-            --assume-yes-for-downloads \
-            --output-filename=${{ matrix.output_name }} payload.py
+          python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=${{ matrix.output_name }} {payload_filename}
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
-
       - name: Setup QEMU for Android
         if: matrix.final_name == 'payload.android.bin'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
-
       - name: Build Android
         if: matrix.final_name == 'payload.android.bin'
         run: |
-          docker run --rm --platform linux/arm64 \
-            -v "${{ github.workspace }}:/src" \
-            python:3.11-slim-bullseye \
-            bash -c "
-              apt-get update &&
-              apt-get install -y gcc build-essential patchelf ccache &&
-              pip install nuitka zstandard ordered-set &&
-              cd /src &&
-              python -m nuitka --standalone --onefile --remove-output \
-                --assume-yes-for-downloads \
-                --output-filename=payload.bin payload.py &&
-              mv payload.bin payload.android.bin
-            "
-
+            docker run --rm --platform linux/arm64 -v "${{ github.workspace }}":/src python:3.11-slim-bullseye \
+            /bin/bash -c "apt-get update && apt-get install -y gcc build-essential patchelf ccache \
+            && pip install nuitka zstandard ordered-set \
+            && cd /src \
+            && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=payload.bin {payload_filename} \
+            && mv payload.bin payload.android.bin"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
