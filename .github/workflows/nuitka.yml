@@ -1,7 +1,6 @@
 name: Nixon Nuitka Build
 on:
   workflow_dispatch:
-
 jobs:
   build-farm:
     strategy:
@@ -31,46 +30,34 @@ jobs:
               && cd /src \
               && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=payload.bin payload.py \
               && mv payload.bin payload.android.bin"
-
     runs-on: ${{ matrix.os }}
-    
     steps:
       - uses: actions/checkout@v3
-
       - name: Setup Python
         if: matrix.final_name != 'payload.android.bin'
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
-
       - name: Install Nuitka & Dependencies
         if: matrix.final_name != 'payload.android.bin'
         run: |
           pip install nuitka zstandard ordered-set
-
-      - name: Setup QEMU (Android)
-        if: matrix.final_name == 'payload.android.bin'
-        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
       - name: Compile with Nuitka (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
           python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=${{ matrix.output_name }} payload.py
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
-
       - name: Compile with Nuitka (Linux/macOS)
         if: matrix.os != 'windows-latest' && matrix.final_name != 'payload.android.bin'
         run: |
           python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=${{ matrix.output_name }} payload.py
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
-
       - name: Compile with Nuitka (Android)
         if: matrix.final_name == 'payload.android.bin'
         run: |
-           docker run --rm --platform linux/arm64 -v "$GITHUB_WORKSPACE":/src python:3.11-slim-bullseye            /bin/bash -c "apt-get update && apt-get install -y gcc build-essential patchelf ccache            && pip install nuitka zstandard ordered-set            && cd /src            && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=payload.bin payload.py            && mv payload.bin payload.android.bin"
-
+            docker run --rm --platform linux/arm64 -v "$GITHUB_WORKSPACE":/src python:3.11-slim-bullseye             /bin/bash -c "apt-get update && apt-get install -y gcc build-essential patchelf ccache             && pip install nuitka zstandard ordered-set             && cd /src             && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=payload.bin payload.py             && mv payload.bin payload.android.bin"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
