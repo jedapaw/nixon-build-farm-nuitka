@@ -1,7 +1,6 @@
 name: Nixon Nuitka Build
 on:
   workflow_dispatch:
-
 jobs:
   build-farm:
     strategy:
@@ -30,37 +29,30 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
       - name: Setup Python
         if: matrix.final_name != 'payload.android.bin'
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
       - name: Install Nuitka
         if: matrix.final_name != 'payload.android.bin'
         run: pip install nuitka zstandard ordered-set
-
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
           python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=${{{{ matrix.output_name }}}} {payload_filename}
           mv ${{{{ matrix.output_name }}}} ${{{{ matrix.final_name }}}}
-
       - name: Build Linux/macOS
         if: matrix.os != 'windows-latest' && matrix.final_name != 'payload.android.bin'
         run: |
           python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=${{{{ matrix.output_name }}}} {payload_filename}
           mv ${{{{ matrix.output_name }}}} ${{{{ matrix.final_name }}}}
-
-      # [FIX 2] Explicitly setup QEMU before running Docker to fix 'exec format error'
       - name: Setup QEMU for Android
         if: matrix.final_name == 'payload.android.bin'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
-
       - name: Build Android
         if: matrix.final_name == 'payload.android.bin'
         run: |
@@ -70,7 +62,6 @@ jobs:
             && cd /src \\
             && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --output-filename=payload.bin {payload_filename} \\
             && mv payload.bin payload.android.bin"
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
