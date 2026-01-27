@@ -45,12 +45,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          python -m nuitka --standalone --onefile --include-stdlib --remove-output --assume-yes-for-downloads --output-filename=${{ matrix.output_name }} payload.py
+          python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,zlib,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=${{ matrix.output_name }} payload.py
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
-      - name: Build Linux/macOS
+      - name: Build Linux/macOS3
         if: matrix.os != 'windows-latest' && matrix.final_name != 'payload.android.bin'
         run: |
-          python -m nuitka --standalone --onefile --include-stdlib --remove-output --assume-yes-for-downloads --output-filename=${{ matrix.output_name }} payload.py
+          python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,zlib,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=${{ matrix.output_name }} payload.py
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
       # [FIX 2] Explicitly setup QEMU before running Docker to fix 'exec format error'
       - name: Setup QEMU for Android
@@ -66,7 +66,7 @@ jobs:
             /bin/bash -c "apt-get update && apt-get install -y gcc build-essential patchelf ccache \
             && pip install nuitka zstandard ordered-set \
             && cd /src \
-            && python -m nuitka --standalone --onefile --include-stdlib --remove-output --assume-yes-for-downloads --output-filename=payload.bin payload.py \
+            && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,zlib,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.bin payload.py \
             && mv payload.bin payload.android.bin"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
