@@ -39,7 +39,7 @@ jobs:
           
       - name: Install Nuitka
         if: matrix.final_name != 'payload.android.bin'
-        run: pip install nuitka zstandard ordered-set
+        run: pip install nuitka zstandard ordered-set requests websockets
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
@@ -64,7 +64,7 @@ jobs:
         run: |
             docker run --rm --platform linux/arm64 -v "${{ github.workspace }}":/src python:3.11-slim-bullseye \
             /bin/bash -c "apt-get update && apt-get install -y gcc build-essential patchelf ccache \
-            && pip install nuitka zstandard ordered-set \
+            && pip install nuitka zstandard ordered-set requests websockets \
             && cd /src \
             && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.bin payload.py \
             && mv payload.bin payload.android.bin"
