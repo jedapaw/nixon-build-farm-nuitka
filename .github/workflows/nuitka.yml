@@ -20,9 +20,6 @@ jobs:
             suffix: .bin
             output_name: payload.bin
             final_name: payload.macos.bin
-          - os: ubuntu-22.04
-            suffix: .bin
-            final_name: payload.android.bin
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
@@ -32,13 +29,13 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Python
-        if: matrix.final_name != 'payload.android.bin'
+        
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           
       - name: Install Nuitka
-        if: matrix.final_name != 'payload.android.bin'
+        
         run: pip install nuitka zstandard ordered-set requests websockets
 
       - name: Build Windows
@@ -48,26 +45,10 @@ jobs:
           python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=${{ matrix.output_name }} payload.py
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
       - name: Build Linux/macOS
-        if: matrix.os != 'windows-latest' && matrix.final_name != 'payload.android.bin'
+        if: matrix.os != 'windows-latest'
         run: |
           python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=${{ matrix.output_name }} payload.py
           mv ${{ matrix.output_name }} ${{ matrix.final_name }}
-
-      - name: Setup QEMU for Android
-        if: matrix.final_name == 'payload.android.bin'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Build Android
-        if: matrix.final_name == 'payload.android.bin'
-        run: |
-            docker run --rm --platform linux/arm64 -v "${{ github.workspace }}":/src python:3.11-slim-bullseye \
-            /bin/bash -c "apt-get update && apt-get install -y gcc build-essential patchelf ccache \
-            && pip install nuitka zstandard ordered-set requests websockets \
-            && cd /src \
-            && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.bin payload.py \
-            && mv payload.bin payload.android.bin"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
