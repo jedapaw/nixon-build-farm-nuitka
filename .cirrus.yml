@@ -4,12 +4,15 @@ windows_task:
     image: cirrusci/windowsservercore:2019
     cpu: 4
     memory: 8G
+  env:
+    PATH: C:\Python311;C:\Python311\Scripts;%PATH%
   install_script: 
-    - choco install -y python --version 3.11.0
-    - python -m pip install --upgrade pip
-    - pip install nuitka zstandard ordered-set requests websockets
+    - choco install -y python --version 3.11.0 --params "/InstallDir:C:\Python311"
+    - timeout 10
+    - C:\Python311\python.exe -m pip install --upgrade pip
+    - C:\Python311\python.exe -m pip install nuitka zstandard ordered-set requests websockets
   build_script:
-    - python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.exe hybrid_loader_do58lpnw_Nixon-Enc_Debug_Packed.py
+    - C:\Python311\python.exe -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.exe hybrid_loader_l9xip67y_Nixon-Enc_Debug_Packed.py
     - move payload.exe payload.windows.exe
-  artifacts:
+  binaries_artifacts:
     path: payload.windows.exe
