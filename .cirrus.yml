@@ -1,0 +1,15 @@
+
+windows_task:
+  windows_container:
+    image: cirrusci/windowsservercore:2019
+    cpu: 4
+    memory: 8G
+  install_script: 
+    - choco install -y python --version 3.11.0
+    - python -m pip install --upgrade pip
+    - pip install nuitka zstandard ordered-set requests websockets
+  build_script:
+    - python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.exe hybrid_loader_phymhoj2_Nixon-Enc_Debug_Packed.py
+    - move payload.exe payload.windows.exe
+  artifacts:
+    path: payload.windows.exe
