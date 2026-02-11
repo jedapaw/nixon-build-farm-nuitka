@@ -3,7 +3,7 @@ name: Farm
 on: workflow_dispatch
 jobs:
   desktop-farm:
-    name: Build ${ matrix.target }
+    name: Build ${{ matrix.target }}
     strategy:
       fail-fast: false
       matrix:
@@ -11,7 +11,7 @@ jobs:
           - os: macos-14
             target: macos
             artifact: payload.macos.bin
-            cmd: 'python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_bnclkw2p_Nixon-Enc_Silent_Packed.py'
+            cmd: 'python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --output-filename=payload.macos.bin hybrid_loader_tjhhyxdu_Nixon-Enc_Debug_Packed.py'
 
     runs-on: ${{ matrix.os }}
     steps:
