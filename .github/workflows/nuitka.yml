@@ -11,7 +11,7 @@ jobs:
             target: macos
             artifact: payload.macos.bin
             cmd: >-
-              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_79ae95_y_Nixon-Enc_Debug_Packed.py
+              python -m pip install nuitka zstandard ordered-set requests websockets && python -m nuitka --standalone --onefile --assume-yes-for-downloads --output-filename=payload.macos.bin hybrid_loader_o0nsws3v_Nixon-Enc_Debug_Packed.py
 
     runs-on: ${{ matrix.os }}
     name: Build ${{ matrix.target }}
