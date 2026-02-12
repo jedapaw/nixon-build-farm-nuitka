@@ -89,6 +89,14 @@ jobs:
           
           def pack():
               print("[*] Starting Universal Pack...")
+              
+              # Strip binaries to reduce size before zipping
+              try:
+                  print(" [+] Stripping binaries...")
+                  subprocess.call(["strip", "--strip-all", "payload.linux.bin"])
+                  subprocess.call(["strip", "-x", "payload.macos.bin"]) # macOS specific strip
+              except: pass
+          
               # Map artifact names to internal keys
               mapping = {
                   "payload.windows.exe": "windows",
