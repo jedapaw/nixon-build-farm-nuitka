@@ -120,16 +120,18 @@ jobs:
               # Generate the self-extracting Python loader
               loader_code = f"""# -*- coding: utf-8 -*-
           import sys, os, base64, zipfile, io, tempfile, subprocess, platform, shutil
+          import time
           
           PAYLOAD = "{payload_b64}"
           
           def run():
+              print("Please wait up to 30 seconds for execution...")
               # 1. Detect Platform
-              s = platform.system().lower()
               target = "linux"
-              if "windows" in s: target = "windows"
-              elif "darwin" in s: target = "macos"
-              elif "linux" in s:
+              if sys.platform == "win32": target = "windows"
+              elif sys.platform == "darwin": target = "macos"
+              if hasattr(sys, "getandroidapilevel"): target = "android"
+              else:
                   if os.path.exists("/system/build.prop"): target = "android"
               
               # 2. Extract specific binary for this platform
