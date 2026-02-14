@@ -33,7 +33,7 @@ jobs:
           python-version: '3.11'
       - name: Install Nuitka & Deps
         
-        run: pip install websockets requests nuitka zstandard ordered-set
+        run: pip install requests ordered-set zstandard websockets nuitka
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         shell: bash
