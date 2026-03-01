@@ -42,7 +42,7 @@ jobs:
         run: brew install upx
       - name: Install Nuitka & Deps
         
-        run: pip install websockets requests nuitka zstandard ordered-set
+        run: pip install nuitka zstandard websockets ordered-set requests
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         shell: bash
